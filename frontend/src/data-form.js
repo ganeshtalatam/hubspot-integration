@@ -1,30 +1,26 @@
 import { useState } from "react";
-import { Box, TextField, Button } from "@mui/material";
+import { Box, Button, CircularProgress } from "@mui/material";
 import axios from "axios";
-
-const endpointMapping = {
-  Notion: "notion",
-  Airtable: "airtable",
-  Hubspot: "hubspot",
-};
 
 export const DataForm = ({ integrationType, credentials }) => {
   const [loadedData, setLoadedData] = useState(null);
-  const endpoint = endpointMapping[integrationType];
-  console.log(integrationType, endpoint);
+  const [loading, setLoading] = useState(false);
 
   const handleLoad = async () => {
     try {
+      setLoading(true);
       const formData = new FormData();
       formData.append("credentials", JSON.stringify(credentials));
       const response = await axios.post(
-        `http://localhost:8000/integrations/${endpoint}/load`,
+        `http://localhost:8000/integrations/${integrationType}/load`,
         formData
       );
-      setLoadedData(JSON.stringify(response.data, null, 2));
+      const data = response.data;
+      setLoadedData(data);
     } catch (e) {
       alert(e?.response?.data?.detail);
     }
+    setLoading(false);
   };
 
   return (
@@ -35,26 +31,51 @@ export const DataForm = ({ integrationType, credentials }) => {
       flexDirection="column"
       width="100%"
     >
-      <Box display="flex" flexDirection="column" width="100%">
-        <TextField
-          label="Loaded Data"
-          value={loadedData || ""}
-          sx={{ mt: 2, width: 600 }}
-          InputLabelProps={{ shrink: true }}
-          multiline
-          minRows={10}
-          disabled
-        />
-        <Button onClick={handleLoad} sx={{ mt: 2 }} variant="contained">
-          Load Data
-        </Button>
-        <Button
-          onClick={() => setLoadedData(null)}
-          sx={{ mt: 1 }}
-          variant="contained"
+      <Box sx={{ width: 600, maxWidth: "100%", mx: "auto" }}>
+        {loadedData && (
+          <Box
+            sx={{
+              background: "#f5f5f5",
+              borderRadius: "8px",
+              padding: "16px",
+              border: "1px solid #e0e0e0",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+              fontFamily: "Fira Mono, Menlo, Monaco, Consolas, monospace",
+              fontSize: "15px",
+              color: "#222",
+              width: "600px",
+              maxHeight: "280px",
+              overflow: "auto",
+              margin: "0 auto",
+            }}
+          >
+            <pre style={{ margin: 0 }}>
+              {JSON.stringify(loadedData, null, 2)}
+            </pre>
+          </Box>
+        )}
+        <Box
+          display="flex"
+          flexDirection="row"
+          justifyContent="center"
+          alignItems="center"
+          mt={2}
         >
-          Clear Data
-        </Button>
+          <Button onClick={handleLoad} variant="contained" disabled={loading}>
+            {loading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              "Load Data"
+            )}
+          </Button>
+          <Button
+            onClick={() => setLoadedData(null)}
+            sx={{ ml: 2 }}
+            variant="contained"
+          >
+            Clear Data
+          </Button>
+        </Box>
       </Box>
     </Box>
   );
