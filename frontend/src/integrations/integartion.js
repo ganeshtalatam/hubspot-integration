@@ -1,16 +1,20 @@
-// airtable.js
-
-import { useState, useEffect } from "react";
+// integration.js
+import React from "react";
+import { useState } from "react";
 import { Box, Button, CircularProgress } from "@mui/material";
 import axios from "axios";
+import { startCase } from "lodash";
 
-export const AirtableIntegration = ({
+export const Integration = ({
+  integrationType,
   user,
   org,
   integrationParams,
   setIntegrationParams,
 }) => {
-  const [isConnected, setIsConnected] = useState(false);
+  const isConnected = integrationParams?.[integrationType]?.credentials
+    ? true
+    : false;
   const [isConnecting, setIsConnecting] = useState(false);
 
   // Function to open OAuth in a new window
@@ -21,14 +25,15 @@ export const AirtableIntegration = ({
       formData.append("user_id", user);
       formData.append("org_id", org);
       const response = await axios.post(
-        `http://localhost:8000/integrations/airtable/authorize`,
+        `http://localhost:8000/integrations/${integrationType}/authorize`,
         formData
       );
+
       const authURL = response?.data;
 
       const newWindow = window.open(
         authURL,
-        "Airtable Authorization",
+        `${startCase(integrationType)} Authorization`,
         "width=600, height=600"
       );
 
@@ -52,17 +57,19 @@ export const AirtableIntegration = ({
       formData.append("user_id", user);
       formData.append("org_id", org);
       const response = await axios.post(
-        `http://localhost:8000/integrations/airtable/credentials`,
+        `http://localhost:8000/integrations/${integrationType}/credentials`,
         formData
       );
       const credentials = response.data;
       if (credentials) {
         setIsConnecting(false);
-        setIsConnected(true);
+
         setIntegrationParams((prev) => ({
           ...prev,
-          credentials: credentials,
-          type: "Airtable",
+          [integrationType]: {
+            credentials: credentials,
+            type: integrationType,
+          },
         }));
       }
       setIsConnecting(false);
@@ -71,10 +78,6 @@ export const AirtableIntegration = ({
       alert(e?.response?.data?.detail);
     }
   };
-
-  useEffect(() => {
-    setIsConnected(integrationParams?.credentials ? true : false);
-  }, []);
 
   return (
     <>
@@ -98,11 +101,11 @@ export const AirtableIntegration = ({
             }}
           >
             {isConnected ? (
-              "Airtable Connected"
+              `${startCase(integrationType)} Connected`
             ) : isConnecting ? (
               <CircularProgress size={20} />
             ) : (
-              "Connect to Airtable"
+              `Connect to ${startCase(integrationType)}`
             )}
           </Button>
         </Box>

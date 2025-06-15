@@ -1,22 +1,19 @@
 import { useState } from "react";
 import { Box, Autocomplete, TextField } from "@mui/material";
-import { AirtableIntegration } from "./integrations/airtable";
-import { NotionIntegration } from "./integrations/notion";
-import { HubSpotIntegration } from "./integrations/hubspot";
 import { DataForm } from "./data-form";
+import { Integration } from "./integrations/integartion";
 
-const integrationMapping = {
-  Notion: NotionIntegration,
-  Airtable: AirtableIntegration,
-  HubSpot: HubSpotIntegration,
-};
+const integrationOptions = [
+  { label: "Notion", value: "notion" },
+  { label: "Airtable", value: "airtable" },
+  { label: "Hubspot", value: "hubspot" },
+];
 
 export const IntegrationForm = () => {
   const [integrationParams, setIntegrationParams] = useState({});
   const [user, setUser] = useState("TestUser");
   const [org, setOrg] = useState("TestOrg");
   const [currType, setCurrType] = useState(null);
-  const CurrIntegration = integrationMapping[currType];
 
   return (
     <Box
@@ -41,29 +38,30 @@ export const IntegrationForm = () => {
         />
         <Autocomplete
           id="integration-type"
-          options={Object.keys(integrationMapping)}
+          options={integrationOptions}
           sx={{ width: 300, mt: 2 }}
           renderInput={(params) => (
             <TextField {...params} label="Integration Type" />
           )}
-          onChange={(e, value) => setCurrType(value)}
+          onChange={(e, option) => setCurrType(option ? option.value : null)}
         />
       </Box>
       {currType && (
         <Box>
-          <CurrIntegration
-            userId={user}
-            orgId={org}
+          <Integration
+            integrationType={currType}
+            user={user}
+            org={org}
             integrationParams={integrationParams}
             setIntegrationParams={setIntegrationParams}
           />
         </Box>
       )}
-      {integrationParams?.credentials && (
+      {integrationParams?.[currType]?.credentials && (
         <Box sx={{ mt: 2 }}>
           <DataForm
-            integrationType={integrationParams?.type}
-            credentials={integrationParams?.credentials}
+            integrationType={currType}
+            credentials={integrationParams?.[currType]?.credentials}
           />
         </Box>
       )}
